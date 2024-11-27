@@ -2,7 +2,7 @@ let canvas   = undefined,
     ctx      = undefined,
     isMobile = false;
 
-let bgImageBitmap = undefined;
+const textures = {};
 
 
 async function onInit(data)
@@ -11,30 +11,45 @@ async function onInit(data)
     ctx      = canvas.getContext('2d');
     isMobile = data.isMobile;
 
+    canvas.width  = data.width;
+    canvas.height = data.height;
+
     ctx.fillStyle = "#ffff00";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-function onBgImageLoaded(data)
+function onImageAssetsLoaded(data)
 {
-    bgImageBitmap = data.asset;
-    ctx.drawImage(bgImageBitmap, 0, 0, canvas.width, canvas.height);
+    for(let i = 0; i < data.assets.length; i++)
+    {
+        textures[data.assets[i].key] = data.assets[i].asset;
+    }
+    
+    function draw()
+    {
+        requestAnimationFrame(draw);
+        
+        ctx.drawImage(textures.bg, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(textures.dot, canvas.width / 2, canvas.height / 2);
+    }
+
+    requestAnimationFrame(draw);
 }
 
 function onWindowResize(data)
-{
-    canvas.width = data.width;
-    canvas.height = data.height;
+{  
+    canvas.width = data.dimensions[0];
+    canvas.height = data.dimensions[1];
 }
 
 
 const events = {
-    "init": onInit,
-    "windowResize": onWindowResize,
-    "bgImgLoaded": onBgImageLoaded,
+    init: onInit,
+    windowResize: onWindowResize,
+    imageAssetsLoaded: onImageAssetsLoaded,
 }
 
-self.onmessage = (msg) => {
+onmessage = (msg) => {
     events[msg.data.eventName](msg.data);
 }
 

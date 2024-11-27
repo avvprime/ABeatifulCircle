@@ -1,6 +1,4 @@
-async function loadBgImage(origin)
-{
-    const url = `${origin}/public/bg.webp`;
+async function loadImageAsset(url){
     try {
         const response = await fetch(url);
 
@@ -18,7 +16,18 @@ async function loadBgImage(origin)
         console.error(error);
         return false;
     }
-    
+}
+
+async function loadImageAssets(origin, assets)
+{
+    const _assets = [];
+    for (let i = 0; i < assets.length; i++)
+    {
+        const url = `${origin}/${assets[i].fileName}`
+        _assets.push({key: assets[i].key, asset: await loadImageAsset(url)})
+    }
+
+    return _assets;
 }
 
 
@@ -26,14 +35,14 @@ async function loadBgImage(origin)
 
 
 async function onInit(data){
-    const asset = await loadBgImage(data.origin);
-    postMessage({eventName: "bgImgLoaded", data: asset});
+    const assets = await loadImageAssets(data.origin, data.assets);
+    postMessage({eventName: "imageAssetsLoaded", assets: assets});
 }
 
 const events = {
     init: onInit,
 }
 
-self.onmessage = (msg) => {
+onmessage = (msg) => {
     events[msg.data.eventName](msg.data);
 }
