@@ -8,5 +8,5 @@ So I need to pivot, game engine. I will continue to build my game with another g
 In the future I may complete this project but for now it will stay here for my "previous work examples portfolio".
 
 This is the general algorithm thought for structure.
-![https://github.com/avvprime/ABeatifulCircle/blob/main/Ekran%20g%C3%B6r%C3%BCnt%C3%BCs%C3%BC%202024-11-28%20181825.png]
+![](https://github.com/avvprime/ABeatifulCircle/blob/main/Ekran%20g%C3%B6r%C3%BCnt%C3%BCs%C3%BC%202024-11-28%20181825.png)
 
