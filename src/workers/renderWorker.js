@@ -1,6 +1,7 @@
 let canvas   = undefined,
     ctx      = undefined,
-    isMobile = false;
+    isMobile = false,
+    scale    = 1;
 
 const textures = {};
 
@@ -13,6 +14,8 @@ async function onInit(data)
 
     canvas.width  = data.width;
     canvas.height = data.height;
+
+    scale = data.scale;
 
     ctx.fillStyle = "#ffff00";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -30,7 +33,7 @@ function onImageAssetsLoaded(data)
         requestAnimationFrame(draw);
         
         ctx.drawImage(textures.bg, 0, 0, canvas.width, canvas.height);
-        ctx.drawImage(textures.dot, canvas.width / 2, canvas.height / 2);
+        ctx.drawImage(textures.dot, canvas.width / 2, canvas.height / 2, textures.dot.width * scale, textures.dot.height * scale);
     }
 
     requestAnimationFrame(draw);
@@ -40,6 +43,7 @@ function onWindowResize(data)
 {  
     canvas.width = data.dimensions[0];
     canvas.height = data.dimensions[1];
+    scale = data.scale;
 }
 
 

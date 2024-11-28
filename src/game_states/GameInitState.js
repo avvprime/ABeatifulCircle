@@ -15,7 +15,17 @@ export default class GameInitState extends GameState{
         this.game.domCanvas = document.getElementById("game-canvas");
         this.game.offscreen = this.game.domCanvas.transferControlToOffscreen();
 
-        window.onresize = () => { EventBus.emit("windowResize", {width: window.innerWidth, height: window.innerHeight}) };
+        // Add window resize event listener
+        window.addEventListener('resize', function(){
+            const scale = this.calcScale();
+            this.game.renderWorker.postMessage({
+                eventName: "windowResize",
+                dimensions: new Uint16Array([window.innerWidth, window.innerHeight]),
+                scale: scale,
+            });
+            EventBus.emit("windowResize", {width: window.innerWidth, height: window.innerHeight, scale: scale});
+            
+        }.bind(this));
 
 
         this.game.renderWorker = new Worker(new URL("../workers/renderWorker.js", import.meta.url), { type: "module" });
@@ -24,6 +34,7 @@ export default class GameInitState extends GameState{
             canvas: this.game.offscreen,
             width: window.innerWidth,
             height: window.innerHeight,
+            scale: this.calcScale(),
             isMobile: _isMobile }, 
             [this.game.offscreen]
         );
@@ -33,9 +44,7 @@ export default class GameInitState extends GameState{
         EventBus.subscribe("imageAssetsLoaded", (data) => {
             this.game.renderWorker.postMessage({eventName: "imageAssetsLoaded", assets: data.assets});
         });
-        // Notify render worker when window size change
-        EventBus.subscribe("windowResize", (data) => { this.game.renderWorker.postMessage({eventName: "windowResize", dimensions: new Uint16Array([window.innerWidth, window.innerHeight])}) })
-        
+
         
         this.game.assetWorker = new Worker(new URL("../workers/assetWorker.js", import.meta.url), { type: "module"});
         this.game.assetWorker.postMessage({
@@ -49,5 +58,12 @@ export default class GameInitState extends GameState{
         this.game.assetWorker.onmessage = (msg) => { EventBus.emit(msg.data.eventName, msg.data) };
         
     
+    }
+
+    calcScale()
+    {
+        // 1080, Short side of logical screen size
+        // But I gave arbitrary numbers to adjust appropriate size according to screen dimensions
+        return Math.min(window.innerWidth, window.innerHeight) / 1600;
     }
 }

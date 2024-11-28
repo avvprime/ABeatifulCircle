@@ -13,7 +13,7 @@ export const EventBus = {
     emit: function(eventName, data){
         if (this.events[eventName] === undefined)
         {
-            console.error("There is no event called: " + eventName);
+            console.log("No callback registered for " + eventName);
             return;
         }
 

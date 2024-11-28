@@ -7,6 +7,16 @@ export default class Game{
         INIT: new GameInitState(this, "Game Init State"),
     };
 
+    
+    Textures = {
+        /*
+        key: {
+            width: xx,
+            height: xx
+        }
+        */
+    };
+
     state = undefined;
 
     constructor()
