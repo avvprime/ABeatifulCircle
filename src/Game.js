@@ -4,8 +4,8 @@ class Spring{
     y = 0;
     height = 0;
     targetHeight = 0;
-    ox = 0;
-    oy = 0;
+    ox = 0; // origin x
+    oy = 0; // origin y
 
     velocity = 0;
 
@@ -60,91 +60,54 @@ class Spring{
         ctx.fill();
     }
 
+    updatePositions(_x, _y, _ox, _oy)
+    {
+        this.x = _x;
+        this.y = _y;
+        this.ox = _ox;
+        this.oy = _oy;
+    }
+
 }
 
+class Ring{
 
-
-export default class Game{
-
-
+    idx = 0;
+    cx  = 0;
+    cy  = 0;
+    r   = 64;
+    stiffness = 0.025;
+    damp = 0.05;
     springs = [];
 
-    constructor()
+    constructor(ringIdx, stepDist, baseRad, res, cx, cy, stiffness, damp, strokeColor)
     {
-        this.canvas = document.getElementById('game-canvas');
-        this.ctx = this.canvas.getContext('2d');
-
-        window.onresize = this.handleResize.bind(this);
-
-        this.handleResize();
-
-        this.center = {
-            x: Math.round(this.canvas.width / 2),
-            y: Math.round(this.canvas.height / 3)
-        };
-
-        this.generateRing();
-
-        this.springs[7].velocity -= 2;
+        this.idx = ringIdx;
+        this.cx  = cx;
+        this.cy  = cy;
+        this.r   = baseRad + stepDist * ringIdx;
+        this.res = 32;
+        this.stiffness = stiffness;
+        this.damp = damp;
+        this.strokeColor = strokeColor;
+        this.generateSprings();
     }
 
-    initGame()
+    generateSprings()
     {
-        requestAnimationFrame(this.firstFrame.bind(this));
-    }
-
-    frameId = 0;
-    acc = 0;
-    lastTime = 0;
-    step = 1 / 60;
-
-    firstFrame(elapsedtime)
-    {
-        this.frameId = requestAnimationFrame(this.loopCallback.bind(this));
-        this.lastTime = elapsedtime;
-    }
-
-    loopCallback(elapsedtime)
-    {
-        this.frameId = requestAnimationFrame(this.loopCallback.bind(this));
-        const dt = (elapsedtime - this.lastTime) / 1000;
-        this.acc += dt;
-        while(this.acc > this.step)
-        {
-            this.update(this.step);
-            this.acc -= this.step;
-        }
-        this.draw();
-        this.lastTime = elapsedtime;
-    }
-
-
-    generateRing()
-    {
-        const res = 64;
-        const step = 6.28 / res;
-        const rad  = 64;
-        for (let i = 0; i < res; i++)
+        const step = 6.28 / this.res;
+        for (let i = 0; i < this.res; i++)
         {
             const angle = i * step;
-            const point = {
-                x: this.center.x + (rad * Math.cos(angle)),
-                y: this.center.y + (rad * Math.sin(angle))
-            };
-            this.springs.push(new Spring(point.x, point.y, this.center.x, this.center.y));
+            const [px, py] = this.calcEdgePoint(angle, this.r, this.cx, this.cy);
+            this.springs.push(new Spring(px, py, this.cx, this.cy))
         }
     }
 
     update()
     {
-        this.updateRings();
-        
-    }
+        for(let i = 0; i < this.springs.length; i++) this.springs[i].wave_update(this.stiffness, this.damp);
 
-    // current phase only have one ring so 
-    updateRings()
-    {
-        for (let i = 0; i < this.springs.length; i++) this.springs[i].wave_update(0.025, 0.05);
 
         const leftDeltas = [];
         const rightDeltas = [];
@@ -181,9 +144,114 @@ export default class Game{
                 if (i > this.springs.length - 1) this.springs[i + 1].height += rightDeltas[i];
             }
         }
+    }
 
+    draw(ctx)
+    {
+        ctx.strokeStyle = "#212121";
+        //this.ctx.fillStyle = "#47ADD0";
+        ctx.beginPath();
+        ctx.moveTo(this.springs[0].x, this.springs[0].y);
+        for (let i = 1; i < this.springs.length; i++)
+        {
+            ctx.lineTo(this.springs[i].x, this.springs[i].y);
+        }
+        ctx.lineTo(this.springs[0].x, this.springs[0].y);
+        ctx.stroke();
+        //ctx.fill();
+
+        /*
+        ctx.fillStyle = "#212121";
+        for (let i = 0; i < this.springs.length; i++)
+        {
+            this.springs[i].draw(ctx);
+        }
+        */
+    }
+
+    calcEdgePoint(angle, rad, ox, oy)
+    {
+        return [
+            ox + rad * Math.cos(angle),
+            oy + rad * Math.sin(angle)
+        ]
+    }
+
+    handleResize(newCenter)
+    {
         
     }
+
+}
+
+
+export default class Game{
+
+
+    rings = [];
+    center = {
+        x: 0,
+        y: 0
+    };
+
+    constructor()
+    {
+        this.canvas = document.getElementById('game-canvas');
+        this.ctx = this.canvas.getContext('2d');
+
+        window.onresize = this.handleResize.bind(this);
+
+        this.center = {
+            x: Math.round(this.canvas.width / 2),
+            y: Math.round(this.canvas.height / 3)
+        };
+        
+        this.handleResize();
+        
+        this.generateRing();
+    }
+
+    initGame()
+    {
+        requestAnimationFrame(this.firstFrame.bind(this));
+    }
+
+    frameId = 0;
+    acc = 0;
+    lastTime = 0;
+    step = 1 / 60;
+
+    firstFrame(elapsedtime)
+    {
+        this.frameId = requestAnimationFrame(this.loopCallback.bind(this));
+        this.lastTime = elapsedtime;
+    }
+
+    loopCallback(elapsedtime)
+    {
+        this.frameId = requestAnimationFrame(this.loopCallback.bind(this));
+        const dt = (elapsedtime - this.lastTime) / 1000;
+        this.acc += dt;
+        while(this.acc > this.step)
+        {
+            this.update(this.step);
+            this.acc -= this.step;
+        }
+        this.draw();
+        this.lastTime = elapsedtime;
+    }
+
+
+    generateRing()
+    {
+        this.rings.push(new Ring(1, 32, 32, 32, this.center.x, this.center.y, 0.025, 0.05, "#212121"));
+    }
+
+    update()
+    {
+        for (let i = 0; i < this.rings.length; i++) this.rings[i].update();
+    }
+
 
     draw()
     {
@@ -192,15 +260,16 @@ export default class Game{
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         this.drawFrame();
-        this.drawRing();
+        // draw rings
+        for (let i = 0; i < this.rings.length; i++) this.rings[i].draw(this.ctx);
 
-        
+        // draw center circle
         this.ctx.fillStyle = "#212121";
         this.ctx.beginPath();
         this.ctx.arc(this.center.x, this.center.y, 32, 0, 6.28);
         this.ctx.fill();
         
-        // fore circle
+        // draw inner small circle
         this.ctx.fillStyle = "#ffffff";
         this.ctx.beginPath();
         this.ctx.arc(this.center.x, this.center.y, 4, 0, 6.28);
@@ -230,32 +299,14 @@ export default class Game{
         this.ctx.stroke();
     }
 
-    drawRing()
-    {
-        this.ctx.strokeStyle = "#212121";
-        //this.ctx.fillStyle = "#47ADD0";
-        this.ctx.beginPath();
-        this.ctx.moveTo(this.springs[0].x, this.springs[0].y);
-        for (let i = 1; i < this.springs.length; i++)
-        {
-            this.ctx.lineTo(this.springs[i].x, this.springs[i].y);
-        }
-        this.ctx.lineTo(this.springs[0].x, this.springs[0].y);
-        this.ctx.stroke();
-        //this.ctx.fill();
-
-        /*
-        this.ctx.fillStyle = "#212121";
-        for (let i = 0; i < this.springs.length; i++)
-        {
-            this.springs[i].draw(this.ctx);
-        }
-        */
-    }
-
     handleResize()
     {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
+
+        this.center.x = this.canvas.width / 2;
+        this.center.y = this.canvas.height / 3;
+
+        for(let i = 0; i < this.rings.length; i++) this.rings[i].handleResize(this.center);
     }
 }
